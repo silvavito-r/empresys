@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -22,9 +23,12 @@ const statusVariant = {
 
 const statusLabel = { rascunho: 'Rascunho', ativo: 'Ativo', concluido: 'Concluído' }
 
+interface ExecSummary { total: number; done: number }
+
 export function ChecklistsPage() {
   const [checklists, setChecklists] = useState<ChecklistComObra[]>([])
   const [obras, setObras] = useState<Obra[]>([])
+  const [progressMap, setProgressMap] = useState<Record<string, ExecSummary>>({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -34,12 +38,23 @@ export function ChecklistsPage() {
 
   const loadData = async () => {
     setLoading(true)
-    const [{ data: cls }, { data: obs }] = await Promise.all([
+    const [{ data: cls }, { data: obs }, { data: execs }] = await Promise.all([
       supabase.from('checklists').select('*, obras(nome, cliente_id)').order('created_at', { ascending: false }),
       supabase.from('obras').select('*').eq('status', 'ativa').order('nome'),
+      supabase.from('checklist_execucoes').select('checklist_id, status'),
     ])
+
     setChecklists((cls as ChecklistComObra[]) ?? [])
     setObras(obs ?? [])
+
+    // Build progress map per checklist
+    const map: Record<string, ExecSummary> = {}
+    ;(execs ?? []).forEach((e: { checklist_id: string; status: string }) => {
+      if (!map[e.checklist_id]) map[e.checklist_id] = { total: 0, done: 0 }
+      map[e.checklist_id].total++
+      if (e.status !== 'pendente') map[e.checklist_id].done++
+    })
+    setProgressMap(map)
     setLoading(false)
   }
 
@@ -88,42 +103,58 @@ export function ChecklistsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(cl => (
-            <Card key={cl.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start gap-2">
-                  <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                    <ClipboardList className="h-5 w-5 text-purple-600" />
+          {filtered.map(cl => {
+            const prog = progressMap[cl.id]
+            const pct = prog && prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : null
+
+            return (
+              <Card key={cl.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                      <ClipboardList className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <CardTitle className="text-base leading-tight truncate">{cl.nome}</CardTitle>
+                      <p className="text-xs text-muted-foreground truncate">{cl.obras?.nome ?? '—'}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <CardTitle className="text-base leading-tight truncate">{cl.nome}</CardTitle>
-                    <p className="text-xs text-muted-foreground truncate">{cl.obras?.nome ?? '—'}</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {cl.descricao && <p className="text-sm text-muted-foreground line-clamp-2">{cl.descricao}</p>}
-                <p className="text-xs text-muted-foreground">{formatDateTime(cl.created_at)}</p>
-                <div className="flex items-center justify-between">
-                  <Badge variant={statusVariant[cl.status] ?? 'outline'}>{statusLabel[cl.status] ?? cl.status}</Badge>
-                  <div className="flex gap-1">
-                    {cl.status === 'ativo' && (
-                      <Button size="sm" variant="outline" asChild>
-                        <Link to={`/checklists/${cl.id}/executar`}>
-                          <Play className="h-3 w-3 mr-1" />Executar
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {cl.descricao && <p className="text-sm text-muted-foreground line-clamp-2">{cl.descricao}</p>}
+
+                  {pct !== null && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{prog!.done}/{prog!.total} verificações</span>
+                        <span className="font-semibold text-primary">{pct}%</span>
+                      </div>
+                      <Progress value={pct} className="h-1.5" />
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">{formatDateTime(cl.created_at)}</p>
+                  <div className="flex items-center justify-between">
+                    <Badge variant={statusVariant[cl.status] ?? 'outline'}>{statusLabel[cl.status] ?? cl.status}</Badge>
+                    <div className="flex gap-1">
+                      {cl.status === 'ativo' && (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/checklists/${cl.id}/executar`}>
+                            <Play className="h-3 w-3 mr-1" />Executar
+                          </Link>
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" asChild>
+                        <Link to={`/checklists/${cl.id}`}>
+                          Detalhe <ArrowRight className="ml-1 h-3 w-3" />
                         </Link>
                       </Button>
-                    )}
-                    <Button size="sm" variant="ghost" asChild>
-                      <Link to={`/checklists/${cl.id}`}>
-                        Detalhe <ArrowRight className="ml-1 h-3 w-3" />
-                      </Link>
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
 

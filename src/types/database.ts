@@ -155,12 +155,25 @@ export interface ChecklistComObra extends Checklist {
   obras: { nome: string; cliente_id: string | null } | null
 }
 
+export interface ChecklistComObraCompleta extends Checklist {
+  obras: {
+    nome: string
+    endereco: string | null
+    responsavel: string | null
+    cliente_id: string | null
+    clientes: { nome: string } | null
+  } | null
+}
+
 // ---- Checklist Itens ----
+export type ItemScope = 'pavimento' | 'unidade' | 'ambiente'
+
 export interface ChecklistItem {
   id: string
   checklist_id: string
   nome: string
   ordem: number
+  scope: ItemScope
   created_at: string
 }
 
@@ -168,6 +181,7 @@ export interface ChecklistItemInsert {
   checklist_id: string
   nome: string
   ordem?: number
+  scope?: ItemScope
 }
 
 // ---- Checklist Execuções ----
@@ -178,7 +192,8 @@ export interface ChecklistExecucao {
   checklist_id: string
   item_id: string
   pavimento_id: string
-  unidade_id: string
+  unidade_id: string | null
+  ambiente_id: string | null
   status: ExecucaoStatus
   nota: string | null
   foto_url: string | null
@@ -191,7 +206,8 @@ export interface ChecklistExecucaoInsert {
   checklist_id: string
   item_id: string
   pavimento_id: string
-  unidade_id: string
+  unidade_id?: string | null
+  ambiente_id?: string | null
   status?: ExecucaoStatus
   nota?: string | null
   foto_url?: string | null
