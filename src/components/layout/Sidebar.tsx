@@ -1,21 +1,29 @@
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
+import type { UserRole } from '@/types/database'
 import {
   LayoutDashboard,
   Building2,
   HardHat,
   ClipboardList,
+  Settings,
   Zap,
 } from 'lucide-react'
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/clientes', label: 'Clientes', icon: Building2 },
-  { to: '/obras', label: 'Obras', icon: HardHat },
-  { to: '/checklists', label: 'Checklists', icon: ClipboardList },
+const navItems: { to: string; label: string; icon: React.ElementType; roles: UserRole[] }[] = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['administrador', 'engenharia', 'rh'] },
+  { to: '/clientes', label: 'Clientes', icon: Building2, roles: ['administrador', 'engenharia', 'rh'] },
+  { to: '/obras', label: 'Obras', icon: HardHat, roles: ['administrador', 'engenharia', 'rh'] },
+  { to: '/checklists', label: 'Checklists', icon: ClipboardList, roles: ['administrador', 'engenharia'] },
+  { to: '/admin', label: 'Administração', icon: Settings, roles: ['administrador'] },
 ]
 
 export function Sidebar() {
+  const { role } = useAuth()
+
+  const visibleItems = navItems.filter(item => item.roles.includes(role))
+
   return (
     <aside className="fixed inset-y-0 left-0 w-64 bg-blue-950 text-white flex flex-col z-10">
       {/* Logo */}
@@ -31,7 +39,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

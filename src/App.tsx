@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from './hooks/useAuth'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -10,6 +11,7 @@ import { ChecklistsPage } from './pages/ChecklistsPage'
 import { ChecklistDetalhePage } from './pages/ChecklistDetalhePage'
 import { ChecklistExecucaoPage } from './pages/ChecklistExecucaoPage'
 import { ChecklistRelatorioPage } from './pages/ChecklistRelatorioPage'
+import { AdminPage } from './pages/AdminPage'
 import { Toaster } from './components/ui/toaster'
 import { Loader2 } from 'lucide-react'
 
@@ -28,8 +30,6 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
-  const { user } = useAuth()
-
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -37,7 +37,7 @@ function AppRoutes() {
         path="/"
         element={
           <PrivateRoute>
-            <AppLayout user={user} />
+            <AppLayout />
           </PrivateRoute>
         }
       >
@@ -50,6 +50,7 @@ function AppRoutes() {
         <Route path="checklists/:id" element={<ChecklistDetalhePage />} />
         <Route path="checklists/:id/executar" element={<ChecklistExecucaoPage />} />
         <Route path="checklists/:id/relatorio" element={<ChecklistRelatorioPage />} />
+        <Route path="admin" element={<AdminPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
@@ -58,10 +59,14 @@ function AppRoutes() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-      <Toaster />
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <AppRoutes />
+          <Toaster />
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }
 

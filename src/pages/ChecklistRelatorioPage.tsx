@@ -40,7 +40,7 @@ export function ChecklistRelatorioPage() {
       if (!id) return
       const { data: cl } = await supabase
         .from('checklists')
-        .select('*, obras(nome, endereco, responsavel, cliente_id, clientes(nome))')
+        .select('*, obras(nome, endereco, rua, numero, bairro, cidade, uf, responsavel, cliente_id, clientes(nome, logo_url))')
         .eq('id', id).single()
       if (!cl) { setLoading(false); return }
       setChecklist(cl as ChecklistComObraCompleta)
@@ -137,14 +137,25 @@ export function ChecklistRelatorioPage() {
         `}</style>
 
         <div className="flex items-center justify-between border-b-2 border-blue-800 pb-3 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-800 rounded p-1.5">
-              <Zap className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div>
-              <p className="font-bold text-blue-900 text-base leading-none">EmpreSys</p>
-              <p className="text-xs text-gray-500">Gestão de Obras Elétricas</p>
-            </div>
+          {/* Left: Client logo or EmpreSys branding */}
+          <div className="flex items-center gap-3">
+            {obra?.clientes?.logo_url ? (
+              <img
+                src={obra.clientes.logo_url}
+                alt={construtora}
+                className="h-12 max-w-[120px] object-contain"
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="bg-blue-800 rounded p-1.5">
+                  <Zap className="h-5 w-5 text-yellow-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-blue-900 text-base leading-none">EmpreSys</p>
+                  <p className="text-xs text-gray-500">Gestão de Obras Elétricas</p>
+                </div>
+              </div>
+            )}
           </div>
           <div className="text-right text-xs text-gray-500">
             <p>Relatório gerado em {today}</p>
@@ -170,7 +181,12 @@ export function ChecklistRelatorioPage() {
               </tr>
               <tr>
                 <td className="font-semibold text-gray-600 py-0.5">Endereço:</td>
-                <td className="text-gray-900" colSpan={3}>{obra?.endereco ?? '—'}</td>
+                <td className="text-gray-900" colSpan={3}>
+                  {obra
+                    ? ([obra.rua, obra.numero, obra.bairro].filter(Boolean).join(', ') + ' ' + [obra.cidade, obra.uf].filter(Boolean).join(' - ')).trim() || obra.endereco || '—'
+                    : '—'
+                  }
+                </td>
               </tr>
             </tbody>
           </table>
