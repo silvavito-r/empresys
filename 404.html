@@ -4,14 +4,7 @@
     <meta charset="utf-8" />
     <title>EmpreSys</title>
     <script>
-      // GitHub Pages SPA redirect
-      // Salva a URL no sessionStorage e redireciona para o index.html
-      var l = window.location
-      sessionStorage.redirect = l.href
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        '/empresys/'
-      )
+      window.location.replace('/empresys/')
     </script>
   </head>
   <body></body>
