@@ -60,7 +60,7 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <BrowserRouter basename="/empresys/">
         <AuthProvider>
           <AppRoutes />
           <Toaster />
