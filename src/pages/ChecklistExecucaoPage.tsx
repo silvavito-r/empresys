@@ -341,7 +341,8 @@ export function ChecklistExecucaoPage() {
           <div className="divide-y">
             {itensUnid.map(item => {
               const key = unidKey(item, selectedUnid.id)
-              const pav = pavimentos.find(p => p.id === selectedUnid.pavimento_id)!
+              const pav = pavimentos.find(p => p.id === selectedUnid.pavimento_id)
+              if (!pav) return null
               const insertData = { checklist_id: id, item_id: item.id, pavimento_id: pav.id, unidade_id: selectedUnid.id, ambiente_id: null, status: 'pendente' }
               return (
                 <ItemRow key={item.id} item={item} exec={execMap.get(key)}
@@ -382,8 +383,10 @@ export function ChecklistExecucaoPage() {
               <div className="divide-y">
                 {itensAmb.map(item => {
                   const key = ambKey(item, selectedAmb.id)
-                  const unid = unidades.find(u => u.id === selectedAmb.unidade_id)!
-                  const pav = pavimentos.find(p => p.id === unid.pavimento_id)!
+                  const unid = unidades.find(u => u.id === selectedAmb.unidade_id)
+                  if (!unid) return null
+                  const pav = pavimentos.find(p => p.id === unid.pavimento_id)
+                  if (!pav) return null
                   const insertData = { checklist_id: id, item_id: item.id, pavimento_id: pav.id, unidade_id: unid.id, ambiente_id: selectedAmb.id, status: 'pendente' }
                   return (
                     <ItemRow key={item.id} item={item} exec={execMap.get(key)}
